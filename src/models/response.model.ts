@@ -10,4 +10,12 @@ export class ResponseModel<T> {
     this.message = message;
     this.statusCode = statusCode;
   }
+
+  static success<T>(message: string, data: T): ResponseModel<T> {
+    return new ResponseModel<T>(GENERIC_RESPONSE_STATUS.SUCCESS, message, data);
+  }
+
+  static failed<T>(message: string, data: T): ResponseModel<T> {
+    return new ResponseModel<T>(GENERIC_RESPONSE_STATUS.FAILED, message, data);
+  }
 }

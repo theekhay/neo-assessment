@@ -10,6 +10,7 @@ import { Task } from './entities/task.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TaskGateway } from './task.gateway';
 import { User } from '../user/entities/user.entity';
+import { ResponseModel } from '../../models/response.model';
 
 @Injectable()
 export class TaskService {
@@ -23,28 +24,30 @@ export class TaskService {
   async create(user: User, createTaskDto: CreateTaskDto) {
     const { description, dueDate } = createTaskDto;
     try {
-      const task = this.taskRepository.create({
+      let task = this.taskRepository.create({
         description: description,
         dueDate: new Date(dueDate),
         user,
       });
-      await this.taskRepository.save(task);
+      task = await this.taskRepository.save(task);
       this.taskGateway.emitTaskToUser(user.id, task);
-      return task;
+      return ResponseModel.success('Task created successfully', task);
     } catch (error) {
       throw new BadRequestException(error.message);
     }
   }
 
-  findAll(user: User): Promise<Task[]> {
-    return this.taskRepository.find({
+  async findAll(user: User): Promise<ResponseModel<Task[]>> {
+    const tasks = await this.taskRepository.find({
       where: {
         user: { id: Equal(user.id) },
       },
     });
+
+    return ResponseModel.success('Tasks retrieved successfully', tasks);
   }
 
-  async findOne(taskId: string, user: User): Promise<Task> {
+  async findOne(taskId: string, user: User): Promise<ResponseModel<Task>> {
     try {
       const task = await this.taskRepository.findOne({
         where: { id: Equal(taskId), user: { id: Equal(user.id) } },
@@ -53,7 +56,7 @@ export class TaskService {
       if (!task) {
         throw new NotFoundException(`Task ${taskId} not found`);
       }
-      return task;
+      return ResponseModel.success('Task retrieved successfully', task);
     } catch (error) {
       throw new BadRequestException(error.message);
     }

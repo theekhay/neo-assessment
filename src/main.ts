@@ -8,9 +8,12 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { AllExceptionsFilter } from './helpers/rcp-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  const httpRef = app.getHttpAdapter().getHttpServer();
   app.useGlobalPipes(new ValidationPipe());
 
   const configService = app.get(ConfigService);
@@ -42,6 +45,7 @@ async function bootstrap() {
 
   app.useLogger(app.get(Logger));
   app.enableCors();
+  app.useGlobalFilters(new AllExceptionsFilter(httpRef, new Logger()));
 
   await app.listen(configService.get('PORT'), () =>
     console.log(`Vendaw Core is running on: ${configService.get('PORT')}`),
