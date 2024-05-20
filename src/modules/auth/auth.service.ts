@@ -3,8 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { LoginDTO } from './dtos/auth.dto';
 import { UserService } from 'src/modules/user/user.service';
-import { ResponseModel } from '../models/response.model';
-import { GENERIC_RESPONSE_STATUS } from '../enums/common';
+import { ResponseModel } from '../../models/response.model';
+import { GENERIC_RESPONSE_STATUS } from '../../enums/common';
 
 @Injectable()
 export class AuthService {

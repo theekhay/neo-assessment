@@ -1,7 +1,6 @@
 import {
   BadRequestException,
   ConflictException,
-  HttpStatus,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -12,6 +11,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Equal, Repository } from 'typeorm';
 import { ResetPasswordDTO } from './dto/reset-password.dto';
+import { ResponseModel } from '../../models/response.model';
+import { GENERIC_RESPONSE_STATUS } from '../../enums/common';
 import * as argon from 'argon2';
 
 @Injectable()
@@ -27,10 +28,16 @@ export class UserService {
       if (!isExistingUser) {
         const hashedPassword = await argon.hash(password);
 
-        return await this.userRepository.save({
+        const user = await this.userRepository.save({
           email,
           password: hashedPassword,
         });
+
+        return new ResponseModel(
+          GENERIC_RESPONSE_STATUS.SUCCESS,
+          'User created',
+          user,
+        );
       }
     } catch (error) {
       if (error instanceof ConflictException) {
@@ -40,23 +47,18 @@ export class UserService {
     }
   }
 
-  async findAll() {
-    try {
-      return await this.userRepository.find({ select: ['id', 'username'] });
-    } catch (error) {
-      throw new BadRequestException(error.message);
-    }
-  }
-
   async findById(id: string) {
     try {
       const user = await this.userRepository.findOne({
         where: { id: Equal(id) },
       });
-      console.log(user);
       if (!user) throw new NotFoundException('User not found');
-      console.log('user dey');
-      return user;
+
+      return new ResponseModel(
+        GENERIC_RESPONSE_STATUS.SUCCESS,
+        'User fetched successfully',
+        user,
+      );
     } catch (error) {
       throw new BadRequestException(error.message);
     }
@@ -64,11 +66,15 @@ export class UserService {
 
   async update(id: string, updateUserDto: UpdateUserDto) {
     try {
-      const user = this.findById(id);
+      const user = await this.findById(id);
       if (!user) throw new NotFoundException();
       await this.userRepository.update(id, updateUserDto);
       const updatedUser = await this.findById(id);
-      return updatedUser;
+      return new ResponseModel(
+        GENERIC_RESPONSE_STATUS.SUCCESS,
+        'User updated successfully',
+        updatedUser,
+      );
     } catch (error) {
       throw new BadRequestException(error.message);
     }
@@ -81,10 +87,12 @@ export class UserService {
       if (!user) throw new NotFoundException();
       const hashedPassword = await argon.hash(password);
       await this.userRepository.update(id, { password: hashedPassword });
-      return {
-        statusCode: HttpStatus.OK,
-        message: 'Password has been changed successfully',
-      };
+
+      return new ResponseModel(
+        GENERIC_RESPONSE_STATUS.SUCCESS,
+        'Password has been changed successfully',
+        null,
+      );
     } catch (error) {
       throw new BadRequestException(error.message);
     }
